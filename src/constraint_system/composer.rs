@@ -26,6 +26,8 @@ use alloc::vec::Vec;
 use dusk_bls12_381::BlsScalar;
 use hashbrown::HashMap;
 use crate::plookup::PlookupTable4Arity;
+use crate::plookup::table::hash_tables::{DECOMPOSITION_S_I, INVERSES_S_I};
+use bigint::U256 as u256;
 
 /// The StandardComposer is the circuit-builder tool that the `dusk-plonk`
 /// repository provides so that circuit descriptions can be written, stored and
@@ -200,6 +202,64 @@ impl StandardComposer {
     /// its input table to the composer's dummy table
     pub fn append_lookup_table(&mut self, table: &PlookupTable4Arity) {
         table.0.iter().for_each(|k| self.lookup_table.0.push(*k))
+    }
+
+    /// Gadget that conducts the bar decomposition, returning the 27-entry
+    /// breakdown and adding relevant gates. The input and output variables
+    /// are all in Montgomery form, but non-Montgomery form is used within.
+    /// [x_27, ..., x_2, x_1] & note that s_i_decomposition should be input
+    /// in Montgomery form
+    pub fn decomposition_gadget(
+        &mut self,
+        x: Variable,
+        s_i_decomposition: [Variable; 27],
+    ) -> ([Variable; 27], [u256; 27]) {
+        let mut nibbles_mont = [x; 27];
+        let mut nibbles_reduced = [u256::zero(); 27];
+        // Reduced form needed for the modular operations
+        let reduced_input = self.variables[&x].reduce();
+        let mut intermediate = u256(reduced_input.0);
+        let mut remainder = u256::zero();
+
+        (0..27).for_each(|k| {
+            match k < 26 {
+                true => {
+                    remainder = intermediate % u256(DECOMPOSITION_S_I[k].0);
+                    let intermediate_scalar: BlsScalar =
+                        BlsScalar((intermediate - remainder).0) * INVERSES_S_I[k];
+                    intermediate = u256(intermediate_scalar.0);
+                }
+                false => remainder = intermediate,
+            }
+
+            nibbles_mont[k] = self.add_input(BlsScalar::from_raw(remainder.0));
+            nibbles_reduced[k] = remainder;
+        });
+
+        // x' = x_1 * s_2 + x_2, this is the start of the composition
+        let mut acc = self.big_mul(
+            BlsScalar::one(),
+            nibbles_mont[26],
+            s_i_decomposition[25],
+            Some((BlsScalar::one(), nibbles_mont[25])),
+            BlsScalar::zero(),
+            None,
+        );
+
+        (1..26).for_each(|k| {
+            acc = self.big_mul(
+                BlsScalar::one(),
+                acc,
+                s_i_decomposition[25 - k],
+                Some((BlsScalar::one(), nibbles_mont[25 - k])),
+                BlsScalar::zero(),
+                None,
+            );
+        });
+
+        self.constrain_to_constant(acc, self.variables[&x], None);
+
+        (nibbles_mont, nibbles_reduced)
     }
 }
 
