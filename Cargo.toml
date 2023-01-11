@@ -33,7 +33,9 @@ cfg-if = "1.0"
 # Dusk related deps for WASMI serde
 canonical = {git = "https://github.com/dusk-network/canonical.git", tag = "canonical-0.6.0", optional = true}
 canonical_derive = {git = "https://github.com/dusk-network/canonical.git",tag = "canonical-0.6.0", optional = true}
-
+anyhow = "1.0.32"
+bigint = "4.4.3"
+thiserror = "1.0"
 [dev-dependencies]
 tempdir = "0.3"
 

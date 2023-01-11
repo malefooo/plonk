@@ -19,21 +19,21 @@ use dusk_bytes::{DeserializableSlice, Serializable};
 /// only for fields that have a large multiplicative subgroup of size that is
 /// a power-of-2.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub(crate) struct EvaluationDomain {
+pub struct EvaluationDomain {
     /// The size of the domain.
-    pub(crate) size: u64,
+    pub size: u64,
     /// `log_2(self.size)`.
-    pub(crate) log_size_of_group: u32,
+    pub log_size_of_group: u32,
     /// Size of the domain as a field element.
-    pub(crate) size_as_field_element: BlsScalar,
+    pub size_as_field_element: BlsScalar,
     /// Inverse of the size in the field.
-    pub(crate) size_inv: BlsScalar,
+    pub size_inv: BlsScalar,
     /// A generator of the subgroup.
-    pub(crate) group_gen: BlsScalar,
+    pub group_gen: BlsScalar,
     /// Inverse of the generator of the subgroup.
-    pub(crate) group_gen_inv: BlsScalar,
+    pub group_gen_inv: BlsScalar,
     /// Multiplicative generator of the finite field.
-    pub(crate) generator_inv: BlsScalar,
+    pub generator_inv: BlsScalar,
 }
 
 impl Serializable<{ u64::SIZE + u32::SIZE + 5 * BlsScalar::SIZE }>

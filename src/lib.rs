@@ -52,14 +52,14 @@
 #![allow(clippy::too_many_arguments)]
 #![deny(rustdoc::broken_intra_doc_links)]
 #![deny(missing_docs)]
-#![no_std]
+// #![no_std]
 
 #[cfg(feature = "std")]
 extern crate std;
 
 cfg_if::cfg_if!(
 if #[cfg(feature = "alloc")] {
-    #[macro_use]
+    // #[macro_use]
     extern crate alloc;
     pub mod constraint_system;
     mod bit_iterator;
