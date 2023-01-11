@@ -24,6 +24,7 @@ use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use dusk_bls12_381::BlsScalar;
 use hashbrown::HashMap;
+use crate::plookup::PlookupTable4Arity;
 
 /// The StandardComposer is the circuit-builder tool that the `dusk-plonk`
 /// repository provides so that circuit descriptions can be written, stored and
@@ -133,6 +134,65 @@ impl StandardComposer {
             .keys()
             .copied()
             .collect::<Vec<usize>>()
+    }
+
+    /// Adds a plookup gate to the circuit with its corresponding
+    /// constraints.
+    ///
+    /// This type of gate is usually used when we need to have
+    /// the largest amount of performance and the minimum circuit-size
+    /// possible. Since it allows the end-user to set every selector coefficient
+    /// as scaling value on the gate eq.
+    pub fn plookup_gate(
+        &mut self,
+        a: Variable,
+        b: Variable,
+        c: Variable,
+        d: Option<Variable>,
+        pi: BlsScalar,
+    ) -> Variable {
+        // Check if advice wire has a value
+        let d = match d {
+            Some(var) => var,
+            None => self.zero_var,
+        };
+
+        self.w_l.push(a);
+        self.w_r.push(b);
+        self.w_o.push(c);
+        self.w_4.push(d);
+
+        // Add selector vectors
+        self.q_l.push(BlsScalar::zero());
+        self.q_r.push(BlsScalar::zero());
+        self.q_o.push(BlsScalar::zero());
+        self.q_c.push(BlsScalar::zero());
+        self.q_4.push(BlsScalar::zero());
+        self.q_arith.push(BlsScalar::zero());
+        self.q_m.push(BlsScalar::zero());
+        self.q_range.push(BlsScalar::zero());
+        self.q_logic.push(BlsScalar::zero());
+        self.q_fixed_group_add.push(BlsScalar::zero());
+        self.q_variable_group_add.push(BlsScalar::zero());
+
+        // For a lookup gate, only one selector poly is
+        // turned on as the output is inputted directly
+        self.q_lookup.push(BlsScalar::one());
+
+        self.public_inputs.push(pi);
+
+        self.perm.add_variables_to_map(a, b, c, d, self.n);
+
+        self.n += 1;
+
+        c
+    }
+
+    /// When StandardComposer is initialised, it spawns a dummy table
+    /// with 3 entries that should not be removed. This function appends
+    /// its input table to the composer's dummy table
+    pub fn append_lookup_table(&mut self, table: &PlookupTable4Arity) {
+        table.0.iter().for_each(|k| self.lookup_table.0.push(*k))
     }
 }
 
