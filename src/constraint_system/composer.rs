@@ -18,9 +18,10 @@
 // it is intended to be like this in order to provide
 // maximum performance and minimum circuit sizes.
 
+use alloc::collections::btree_map::BTreeMap;
 use crate::constraint_system::Variable;
 use crate::permutation::Permutation;
-use alloc::collections::BTreeMap;
+// use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use dusk_bls12_381::BlsScalar;
 use hashbrown::HashMap;
@@ -79,10 +80,16 @@ pub struct StandardComposer {
     pub(crate) q_fixed_group_add: Vec<BlsScalar>,
     /// Variable base group addition selector
     pub(crate) q_variable_group_add: Vec<BlsScalar>,
-
+    // Plookup gate wire selector
+    pub(crate) q_lookup: Vec<BlsScalar>,
     /// Sparse representation of the Public Inputs linking the positions of the
     /// non-zero ones to it's actual values.
     pub(crate) public_inputs_sparse_store: BTreeMap<usize, BlsScalar>,
+    /// Public inputs vector
+    pub public_inputs: Vec<BlsScalar>,
+
+    /// Public lookup table
+    pub lookup_table: PlookupTable4Arity,
 
     // Witness vectors
     /// Left wire witness vector.
@@ -245,12 +252,16 @@ impl StandardComposer {
             q_logic: Vec::with_capacity(expected_size),
             q_fixed_group_add: Vec::with_capacity(expected_size),
             q_variable_group_add: Vec::with_capacity(expected_size),
+            q_lookup: Vec::with_capacity(expected_size),
             public_inputs_sparse_store: BTreeMap::new(),
+            public_inputs: Vec::with_capacity(expected_size),
 
             w_l: Vec::with_capacity(expected_size),
             w_r: Vec::with_capacity(expected_size),
             w_o: Vec::with_capacity(expected_size),
             w_4: Vec::with_capacity(expected_size),
+
+            lookup_table: PlookupTable4Arity::new(),
 
             zero_var: Variable(0),
 
